@@ -34,6 +34,11 @@ Config {
 Do relative paths work?
 
 
+connection strings
+mysql://prisma:qd58rcCywPRS4Stk@introspection-public-mysql.clfeqqifnebj.eu-west-1.rds.amazonaws.com:3306/wordpress
+postgres://prisma:qd58rcCywPRS4Stk@introspection-public-postgres-cluster.cluster-ro-clfeqqifnebj.eu-west-1.rds.amazonaws.com:5432/basic-blog?schema=public
+
+
 
 ## Introspection Engine
 

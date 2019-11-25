@@ -14,14 +14,19 @@ fn main() -> Result<(), IoError> {
         (version: "0.1")
         (author: "Matthias Oertel")
         (about: "Tests Prisma Engines RPC Calls")
+        //Config
         (@subcommand config =>                  
             (about: "Stores the configuration for the calls.")
-            (@arg connection: -c +takes_value "The connection string to use." ) 
+            (@arg connection: -s +takes_value "The connection string to use." ) 
             (@arg intro_path: -i +takes_value "The path to the migration engine." )
             (@arg mig_path: -m +takes_value "The path to the introspection engine." )
         )
+        (@subcommand delete => (about: "Deletes the configuration for the calls."))
         // // Introspection
-        (@subcommand introspect =>              (about: "Introspects the specified database and returns its Prisma schema."))
+        (@subcommand introspect =>              
+            (about: "Introspects the specified database and returns its Prisma schema.")
+            (@arg connection: "connection")
+        )
         (@subcommand listDatabases =>           (about: "Lists the available databases."))
         (@subcommand getDatabaseMetadata =>     (about: "Shows metadata for the specified database."))
         // Migration
@@ -36,15 +41,10 @@ fn main() -> Result<(), IoError> {
     )
     .get_matches();
 
-    // Gets a value for config if supplied by user, or defaults to "rpc-test"
-    let config = "rpc-test";
-    let cfg: MyConfig = confy::load(config)?;
-    let intro_path = &cfg.intro_path.as_str();
-    let mig_path = &cfg.mig_path.as_str();
-    let connection_string = &cfg.connection_string.as_str();
-
-    // Introspection
+    // Config
     if let Some(submatches) = matches.subcommand_matches("config") {
+        // old config
+
         let new_cfg: MyConfig = MyConfig {
             version: 0,
             connection_string: submatches
@@ -64,9 +64,43 @@ fn main() -> Result<(), IoError> {
         confy::store(config, new_cfg)?;
     }
 
+    if let Some(submatches) = matches.subcommand_matches("delete") {
+        // delete old config
+
+        let new_cfg: MyConfig = MyConfig {
+            version: 0,
+            connection_string: submatches
+                .value_of("connection")
+                .unwrap_or(&cfg.connection_string)
+                .to_string(),
+            intro_path: submatches
+                .value_of("intro_path")
+                .unwrap_or(&cfg.intro_path)
+                .to_string(),
+            mig_path: submatches
+                .value_of("mig_path")
+                .unwrap_or(&cfg.mig_path)
+                .to_string(),
+        };
+
+        confy::store(config, new_cfg)?;
+    }
+
+    // Gets a value for config if supplied by user, or defaults to "rpc-test"
+    let config = "rpc-test";
+    let cfg: MyConfig = confy::load(config)?;
+    let intro_path = &cfg.intro_path.as_str();
+    let mig_path = &cfg.mig_path.as_str();
+    let connection_string = &cfg.connection_string.as_str();
+
     // Introspection
-    if let Some(_submatches) = matches.subcommand_matches("introspect") {
-        introspect(intro_path, connection_string);
+    if let Some(submatches) = matches.subcommand_matches("introspect") {
+        introspect(
+            intro_path,
+            submatches
+                .value_of("connection")
+                .unwrap_or(&cfg.connection_string),
+        );
     }
 
     if let Some(_submatches) = matches.subcommand_matches("getDatabaseMetadata") {
