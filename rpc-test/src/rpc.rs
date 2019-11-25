@@ -22,6 +22,6 @@ pub mod rpc {
 
         let output = child.wait_with_output().expect("Failed to read stdout");
 
-        println!("{:?}", output);
+        println!("{:#?}", output);
     }
 }

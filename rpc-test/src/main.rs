@@ -5,10 +5,14 @@ use std::io::Error as IoError;
 mod introspection;
 mod migration;
 mod rpc;
+use clap::ArgMatches;
 use crate::introspection::introspection::*;
 use crate::migration::migration::*;
 
 fn main() -> Result<(), IoError> {
+    let config = "rpc-test";
+
+
     let matches = clap_app!(myapp =>
         (@setting SubcommandRequiredElseHelp)
         (version: "0.1")
@@ -21,7 +25,7 @@ fn main() -> Result<(), IoError> {
             (@arg intro_path: -i +takes_value "The path to the migration engine." )
             (@arg mig_path: -m +takes_value "The path to the introspection engine." )
         )
-        (@subcommand delete => (about: "Deletes the configuration for the calls."))
+        (@subcommand reset => (about: "Resets the configuration for the calls."))
         // // Introspection
         (@subcommand introspect =>              
             (about: "Introspects the specified database and returns its Prisma schema.")
@@ -43,52 +47,16 @@ fn main() -> Result<(), IoError> {
 
     // Config
     if let Some(submatches) = matches.subcommand_matches("config") {
-        // old config
-
-        let new_cfg: MyConfig = MyConfig {
-            version: 0,
-            connection_string: submatches
-                .value_of("connection")
-                .unwrap_or(&cfg.connection_string)
-                .to_string(),
-            intro_path: submatches
-                .value_of("intro_path")
-                .unwrap_or(&cfg.intro_path)
-                .to_string(),
-            mig_path: submatches
-                .value_of("mig_path")
-                .unwrap_or(&cfg.mig_path)
-                .to_string(),
-        };
-
-        confy::store(config, new_cfg)?;
+        MyConfig::update(config, submatches)?;
     }
 
-    if let Some(submatches) = matches.subcommand_matches("delete") {
-        // delete old config
-
-        let new_cfg: MyConfig = MyConfig {
-            version: 0,
-            connection_string: submatches
-                .value_of("connection")
-                .unwrap_or(&cfg.connection_string)
-                .to_string(),
-            intro_path: submatches
-                .value_of("intro_path")
-                .unwrap_or(&cfg.intro_path)
-                .to_string(),
-            mig_path: submatches
-                .value_of("mig_path")
-                .unwrap_or(&cfg.mig_path)
-                .to_string(),
-        };
-
-        confy::store(config, new_cfg)?;
+    if let Some(_submatches) = matches.subcommand_matches("reset") {
+         MyConfig::reset(config)?;
     }
 
     // Gets a value for config if supplied by user, or defaults to "rpc-test"
-    let config = "rpc-test";
-    let cfg: MyConfig = confy::load(config)?;
+
+    let cfg: MyConfig = MyConfig::load(config)?;
     let intro_path = &cfg.intro_path.as_str();
     let mig_path = &cfg.mig_path.as_str();
     let connection_string = &cfg.connection_string.as_str();
@@ -159,10 +127,44 @@ impl ::std::default::Default for MyConfig {
         Self {
             version: 0,
             connection_string:
-                "file:/Users/matthias/repos/work/rpc-test/rpc-test/final/test/introspection-engine.db"
-                    .into(),
+            "file:/Users/matthias/repos/work/rpc-test/rpc-test/final/test/introspection-engine.db"
+            .into(),
             mig_path: "/Users/matthias/repos/work/rpc-test/rpc-test/final/binaries/migration-engine".into(),
             intro_path: "/Users/matthias/repos/work/rpc-test/rpc-test/final/binaries/introspection-engine".into(),
         }
+    }
+}
+
+impl MyConfig {
+    fn load(name: &str) -> Result<MyConfig, IoError> {
+        confy::load(name)
+    }
+    
+    fn store(&self, name: &str)-> Result<(), IoError> {
+        confy::store(name, self)
+    }
+    
+    fn reset(name: &str)-> Result<(), IoError> {MyConfig::default().store(name)}
+    
+    //how can i import this?
+    fn update(name:&str, submatches: &ArgMatches) -> Result<(), IoError> {        
+        let old_config = MyConfig::load(name)?;
+        let new_cfg: MyConfig = MyConfig {
+            version: 0,
+            connection_string: submatches
+                .value_of("connection")
+                .unwrap_or(&old_config.connection_string)
+                .to_string(),
+            intro_path: submatches
+                .value_of("intro_path")
+                .unwrap_or(&old_config.intro_path)
+                .to_string(),
+            mig_path: submatches
+                .value_of("mig_path")
+                .unwrap_or(&old_config.mig_path)
+                .to_string(),
+        };
+
+        new_cfg.store(name)
     }
 }
