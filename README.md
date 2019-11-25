@@ -31,6 +31,8 @@ Config {
 
 }
 
+Do relative paths work?
+
 
 
 ## Introspection Engine
@@ -78,9 +80,41 @@ Config {
 ### Apply Migration
 
 ### DMMF to DML
+```json
+{
+    "id": 1,
+    "jsonrpc": "2.0",
+    "method": "convertDmmfToDml",
+    "params": {
+        "projectInfo": "the-project-id",
+        "dmmf": "yada yada"
+    }
+}
+```
+
+
 
 ### List Migrations
+```json
+{
+    "id": 1, 
+    
+    "jsonrpc": "2.0", 
+    "method": "listMigrations", 
+    "params": {"projectInfo": "the-project-id"}
+}
+```
+
 
 ### Migration Progress
-
-
+```json
+{
+    "id": 1,
+    "jsonrpc": "2.0",
+    "method": "migrationProgress",
+    "params": {
+        "projectInfo": "the-project-id",
+        "migrationId": "the-migration-id"
+    }
+}
+```
